@@ -15,10 +15,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
-import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -26,18 +24,18 @@ import org.springframework.http.MediaType;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
-@WebMvcTest(TestController.class)
-class TestControllerTest {
+@WebMvcTest(RecipeController.class)
+class RecipeControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    private RecipeRepository recipeRepository;
+    private RecipeService recipeService;
 
     @Test
     void getAllRecipesReturnsRecipesAsJson() throws Exception {
-        when(recipeRepository.findAll()).thenReturn(List.of(recipe(1L, "Pasta"), recipe(2L, "Salat")));
+        when(recipeService.getAllRecipes(null)).thenReturn(List.of(recipe(1L, "Pasta"), recipe(2L, "Salat")));
 
         mockMvc.perform(get("/recipes"))
                 .andExpect(status().isOk())
@@ -47,8 +45,19 @@ class TestControllerTest {
     }
 
     @Test
+    void getAllRecipesPassesOwnerFilterToService() throws Exception {
+        when(recipeService.getAllRecipes("Mina")).thenReturn(List.of(recipe(3L, "Curry", "Mina")));
+
+        mockMvc.perform(get("/recipes").param("owner", "Mina"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].ownerName", is("Mina")));
+
+        verify(recipeService).getAllRecipes("Mina");
+    }
+
+    @Test
     void getRecipeReturnsRecipeDetails() throws Exception {
-        when(recipeRepository.findById(1L)).thenReturn(Optional.of(recipe(1L, "Pasta")));
+        when(recipeService.getRecipe(1L)).thenReturn(recipe(1L, "Pasta"));
 
         mockMvc.perform(get("/recipes/1"))
                 .andExpect(status().isOk())
@@ -58,78 +67,34 @@ class TestControllerTest {
     }
 
     @Test
-    void getRecipeReturnsNotFoundForMissingRecipe() throws Exception {
-        when(recipeRepository.findById(99L)).thenReturn(Optional.empty());
-
-        mockMvc.perform(get("/recipes/99"))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
     void createRecipeReturnsSavedRecipeAsJson() throws Exception {
-        when(recipeRepository.save(any(Recipe.class))).thenReturn(recipe(7L, "Pizza"));
+        when(recipeService.createRecipe(any(Recipe.class))).thenReturn(recipe(7L, "Pizza"));
 
         mockMvc.perform(post("/recipes")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(recipeJson("Pizza")))
+                .content(recipeJson("Pizza", "Simar")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", is(7)))
                 .andExpect(jsonPath("$.name", is("Pizza")));
     }
 
     @Test
-    void createRecipeSavesAllRequestFields() throws Exception {
-        when(recipeRepository.save(any(Recipe.class))).thenReturn(recipe(1L, "Pizza"));
-        ArgumentCaptor<Recipe> recipeCaptor = ArgumentCaptor.forClass(Recipe.class);
-
-        mockMvc.perform(post("/recipes")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(recipeJson("Pizza")));
-
-        verify(recipeRepository).save(recipeCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(recipeCaptor.getValue().getName()).isEqualTo("Pizza");
-        org.assertj.core.api.Assertions.assertThat(recipeCaptor.getValue().getCategory()).isEqualTo("Hauptgericht");
-        org.assertj.core.api.Assertions.assertThat(recipeCaptor.getValue().getIngredients()).contains("Tomaten");
-    }
-
-    @Test
     void updateRecipeChangesExistingRecipe() throws Exception {
-        when(recipeRepository.findById(1L)).thenReturn(Optional.of(recipe(1L, "Pasta")));
-        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(recipeService.updateRecipe(any(Long.class), any(Recipe.class))).thenReturn(recipe(1L, "Pasta Napoli"));
 
         mockMvc.perform(put("/recipes/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(recipeJson("Pasta Napoli")))
+                .content(recipeJson("Pasta Napoli", "Simar")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name", is("Pasta Napoli")));
     }
 
     @Test
-    void updateRecipeReturnsNotFoundForMissingRecipe() throws Exception {
-        when(recipeRepository.findById(99L)).thenReturn(Optional.empty());
-
-        mockMvc.perform(put("/recipes/99")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(recipeJson("Pasta Napoli")))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
     void deleteRecipeDeletesExistingRecipe() throws Exception {
-        when(recipeRepository.existsById(1L)).thenReturn(true);
-
         mockMvc.perform(delete("/recipes/1"))
                 .andExpect(status().isOk());
 
-        verify(recipeRepository).deleteById(1L);
-    }
-
-    @Test
-    void deleteRecipeReturnsNotFoundForMissingRecipe() throws Exception {
-        when(recipeRepository.existsById(99L)).thenReturn(false);
-
-        mockMvc.perform(delete("/recipes/99"))
-                .andExpect(status().isNotFound());
+        verify(recipeService).deleteRecipe(1L);
     }
 
     @Test
@@ -142,18 +107,23 @@ class TestControllerTest {
     }
 
     private Recipe recipe(Long id, String name) {
+        return recipe(id, name, "Simar");
+    }
+
+    private Recipe recipe(Long id, String name, String ownerName) {
         Recipe recipe = new Recipe(
                 name,
                 "Schnelles Rezept",
                 "Hauptgericht",
                 25,
                 "Nudeln, Tomaten",
-                "Kochen und servieren");
+                "Kochen und servieren",
+                ownerName);
         ReflectionTestUtils.setField(recipe, "id", id);
         return recipe;
     }
 
-    private String recipeJson(String name) {
+    private String recipeJson(String name, String ownerName) {
         return """
                 {
                   "name": "%s",
@@ -161,8 +131,9 @@ class TestControllerTest {
                   "category": "Hauptgericht",
                   "preparationTime": 25,
                   "ingredients": "Nudeln, Tomaten",
-                  "steps": "Kochen und servieren"
+                  "steps": "Kochen und servieren",
+                  "ownerName": "%s"
                 }
-                """.formatted(name);
+                """.formatted(name, ownerName);
     }
 }

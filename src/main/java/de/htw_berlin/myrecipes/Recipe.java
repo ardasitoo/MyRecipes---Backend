@@ -18,6 +18,7 @@ public class Recipe {
     private Integer preparationTime;
     private String ingredients;
     private String steps;
+    private String ownerName;
 
     public Recipe() {
     }
@@ -33,6 +34,17 @@ public class Recipe {
         this.preparationTime = preparationTime;
         this.ingredients = ingredients;
         this.steps = steps;
+        this.ownerName = "Simar";
+    }
+
+    public Recipe(String name, String description, String category, Integer preparationTime, String ingredients, String steps, String ownerName) {
+        this.name = name;
+        this.description = description;
+        this.category = category;
+        this.preparationTime = preparationTime;
+        this.ingredients = ingredients;
+        this.steps = steps;
+        this.ownerName = ownerName;
     }
 
     public Long getId() {
@@ -85,5 +97,13 @@ public class Recipe {
 
     public void setSteps(String steps) {
         this.steps = steps;
+    }
+
+    public String getOwnerName() {
+        return ownerName;
+    }
+
+    public void setOwnerName(String ownerName) {
+        this.ownerName = ownerName;
     }
 }
