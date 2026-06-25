@@ -58,6 +58,15 @@ class RecipeServiceTest {
     }
 
     @Test
+    void createRecipeRejectsMissingIngredients() {
+        Recipe recipe = recipe(null, "Suppe", "Simar");
+        recipe.setIngredients(" ");
+
+        assertThatThrownBy(() -> recipeService.createRecipe(recipe))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
     void updateRecipeCopiesRequestFields() {
         Recipe existingRecipe = recipe(1L, "Pasta", "Simar");
         when(recipeRepository.findById(1L)).thenReturn(Optional.of(existingRecipe));
@@ -78,6 +87,15 @@ class RecipeServiceTest {
         when(recipeRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> recipeService.updateRecipe(99L, recipe(null, "Pasta", "Simar")))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void updateRecipeRejectsMissingIngredients() {
+        Recipe updatedRecipe = recipe(null, "Pasta", "Simar");
+        updatedRecipe.setIngredients("");
+
+        assertThatThrownBy(() -> recipeService.updateRecipe(1L, updatedRecipe))
                 .isInstanceOf(ResponseStatusException.class);
     }
 

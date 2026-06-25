@@ -34,11 +34,13 @@ public class RecipeService {
     }
 
     public Recipe createRecipe(Recipe recipe) {
+        validateRecipe(recipe);
         normalizeOwner(recipe);
         return recipeRepository.save(recipe);
     }
 
     public Recipe updateRecipe(Long id, Recipe updatedRecipe) {
+        validateRecipe(updatedRecipe);
         Recipe recipe = getRecipe(id);
 
         recipe.setName(updatedRecipe.getName());
@@ -88,6 +90,12 @@ public class RecipeService {
         }
 
         recipe.setFavorite(Boolean.TRUE.equals(recipe.getFavorite()));
+    }
+
+    private void validateRecipe(Recipe recipe) {
+        if (!hasText(recipe.getIngredients())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Mindestens eine Zutat ist erforderlich");
+        }
     }
 
     private boolean hasText(String value) {
