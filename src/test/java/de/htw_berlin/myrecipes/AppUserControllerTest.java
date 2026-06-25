@@ -3,7 +3,9 @@ package de.htw_berlin.myrecipes;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,5 +52,13 @@ class AppUserControllerTest {
                         """))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name", is("Mina")));
+    }
+
+    @Test
+    void deleteUserDelegatesToService() throws Exception {
+        mockMvc.perform(delete("/users/2"))
+                .andExpect(status().isOk());
+
+        verify(appUserService).deleteUser(2L);
     }
 }

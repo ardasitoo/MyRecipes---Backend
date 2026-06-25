@@ -33,4 +33,12 @@ public class AppUserService {
         appUser.setName(name);
         return appUserRepository.save(appUser);
     }
+
+    public void deleteUser(Long id) {
+        if (!appUserRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Benutzer nicht gefunden");
+        }
+
+        appUserRepository.deleteById(id);
+    }
 }

@@ -3,6 +3,7 @@ package de.htw_berlin.myrecipes;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -47,6 +48,23 @@ class AppUserServiceTest {
         when(appUserRepository.existsByNameIgnoreCase("Mina")).thenReturn(true);
 
         assertThatThrownBy(() -> appUserService.createUser(new AppUser("Mina")))
+                .isInstanceOf(ResponseStatusException.class);
+    }
+
+    @Test
+    void deleteUserDeletesExistingUser() {
+        when(appUserRepository.existsById(1L)).thenReturn(true);
+
+        appUserService.deleteUser(1L);
+
+        verify(appUserRepository).deleteById(1L);
+    }
+
+    @Test
+    void deleteUserRejectsMissingUser() {
+        when(appUserRepository.existsById(99L)).thenReturn(false);
+
+        assertThatThrownBy(() -> appUserService.deleteUser(99L))
                 .isInstanceOf(ResponseStatusException.class);
     }
 }
