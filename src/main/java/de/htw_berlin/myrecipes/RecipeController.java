@@ -37,6 +37,11 @@ public class RecipeController {
         return recipeService.createRecipe(recipe);
     }
 
+    @PostMapping("/recipes/{id}/share")
+    public Recipe shareRecipe(@PathVariable Long id, @RequestBody ShareRecipeRequest shareRecipeRequest) {
+        return recipeService.shareRecipe(id, shareRecipeRequest.getOwnerName());
+    }
+
     @PutMapping("/recipes/{id}")
     public Recipe updateRecipe(@PathVariable Long id, @RequestBody Recipe updatedRecipe) {
         return recipeService.updateRecipe(id, updatedRecipe);

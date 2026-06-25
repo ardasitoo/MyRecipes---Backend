@@ -63,10 +63,14 @@ class RecipeServiceTest {
         when(recipeRepository.findById(1L)).thenReturn(Optional.of(existingRecipe));
         when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        Recipe result = recipeService.updateRecipe(1L, recipe(null, "Pasta Napoli", "Mina"));
+        Recipe updatedRecipe = recipe(null, "Pasta Napoli", "Mina");
+        updatedRecipe.setFavorite(true);
+
+        Recipe result = recipeService.updateRecipe(1L, updatedRecipe);
 
         assertThat(result.getName()).isEqualTo("Pasta Napoli");
         assertThat(result.getOwnerName()).isEqualTo("Mina");
+        assertThat(result.getFavorite()).isTrue();
     }
 
     @Test
@@ -95,6 +99,26 @@ class RecipeServiceTest {
 
         verify(recipeRepository).save(captor.capture());
         assertThat(captor.getValue().getOwnerName()).isEqualTo("Familie");
+    }
+
+    @Test
+    void shareRecipeCreatesCopyForTargetOwner() {
+        when(recipeRepository.findById(1L)).thenReturn(Optional.of(recipe(1L, "Pasta", "Simar")));
+        when(recipeRepository.save(any(Recipe.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        ArgumentCaptor<Recipe> captor = ArgumentCaptor.forClass(Recipe.class);
+
+        Recipe result = recipeService.shareRecipe(1L, " Familie ");
+
+        verify(recipeRepository).save(captor.capture());
+        assertThat(captor.getValue().getName()).isEqualTo("Pasta");
+        assertThat(result.getOwnerName()).isEqualTo("Familie");
+        assertThat(result.getFavorite()).isFalse();
+    }
+
+    @Test
+    void shareRecipeRejectsMissingTargetOwner() {
+        assertThatThrownBy(() -> recipeService.shareRecipe(1L, " "))
+                .isInstanceOf(ResponseStatusException.class);
     }
 
     private Recipe recipe(Long id, String name, String ownerName) {

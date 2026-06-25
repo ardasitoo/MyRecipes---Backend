@@ -48,8 +48,28 @@ public class RecipeService {
         recipe.setIngredients(updatedRecipe.getIngredients());
         recipe.setSteps(updatedRecipe.getSteps());
         recipe.setOwnerName(hasText(updatedRecipe.getOwnerName()) ? updatedRecipe.getOwnerName().trim() : recipe.getOwnerName());
+        recipe.setFavorite(Boolean.TRUE.equals(updatedRecipe.getFavorite()));
 
         return recipeRepository.save(recipe);
+    }
+
+    public Recipe shareRecipe(Long id, String targetOwnerName) {
+        if (!hasText(targetOwnerName)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Zielbenutzer fehlt");
+        }
+
+        Recipe originalRecipe = getRecipe(id);
+        Recipe sharedRecipe = new Recipe(
+                originalRecipe.getName(),
+                originalRecipe.getDescription(),
+                originalRecipe.getCategory(),
+                originalRecipe.getPreparationTime(),
+                originalRecipe.getIngredients(),
+                originalRecipe.getSteps(),
+                targetOwnerName.trim());
+        sharedRecipe.setFavorite(false);
+
+        return recipeRepository.save(sharedRecipe);
     }
 
     public void deleteRecipe(Long id) {
@@ -63,10 +83,11 @@ public class RecipeService {
     private void normalizeOwner(Recipe recipe) {
         if (!hasText(recipe.getOwnerName())) {
             recipe.setOwnerName(DEFAULT_OWNER);
-            return;
+        } else {
+            recipe.setOwnerName(recipe.getOwnerName().trim());
         }
 
-        recipe.setOwnerName(recipe.getOwnerName().trim());
+        recipe.setFavorite(Boolean.TRUE.equals(recipe.getFavorite()));
     }
 
     private boolean hasText(String value) {

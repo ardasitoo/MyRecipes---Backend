@@ -19,6 +19,7 @@ public class Recipe {
     private String ingredients;
     private String steps;
     private String ownerName;
+    private Boolean favorite;
 
     public Recipe() {
     }
@@ -35,6 +36,7 @@ public class Recipe {
         this.ingredients = ingredients;
         this.steps = steps;
         this.ownerName = "Simar";
+        this.favorite = false;
     }
 
     public Recipe(String name, String description, String category, Integer preparationTime, String ingredients, String steps, String ownerName) {
@@ -45,6 +47,7 @@ public class Recipe {
         this.ingredients = ingredients;
         this.steps = steps;
         this.ownerName = ownerName;
+        this.favorite = false;
     }
 
     public Long getId() {
@@ -105,5 +108,13 @@ public class Recipe {
 
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
+    }
+
+    public Boolean getFavorite() {
+        return favorite;
+    }
+
+    public void setFavorite(Boolean favorite) {
+        this.favorite = favorite;
     }
 }

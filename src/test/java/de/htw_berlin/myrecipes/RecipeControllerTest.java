@@ -79,6 +79,22 @@ class RecipeControllerTest {
     }
 
     @Test
+    void shareRecipeReturnsCopiedRecipeForTargetOwner() throws Exception {
+        when(recipeService.shareRecipe(1L, "Familie")).thenReturn(recipe(8L, "Pasta", "Familie"));
+
+        mockMvc.perform(post("/recipes/1/share")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {
+                          "ownerName": "Familie"
+                        }
+                        """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id", is(8)))
+                .andExpect(jsonPath("$.ownerName", is("Familie")));
+    }
+
+    @Test
     void updateRecipeChangesExistingRecipe() throws Exception {
         when(recipeService.updateRecipe(any(Long.class), any(Recipe.class))).thenReturn(recipe(1L, "Pasta Napoli"));
 
